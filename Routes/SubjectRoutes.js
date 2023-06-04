@@ -4,7 +4,7 @@ const router = express.Router();
 
 router.route("/createsubject").post(createSubject)
 router.route("/editsubject").put(editSubject)
-router.route("/deletesubject").post(deleteSubject)
+router.route("/deletesubject").delete(deleteSubject)
 router.route("/getallsubject").get(getAllSubject)
 
 

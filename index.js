@@ -1,6 +1,7 @@
 const express = require("express");
 // const bodyParser = require("body-parser");
 const morgan = require("morgan")
+const cors = require("cors")
 const mongoose = require('mongoose');
 const dotenv = require("dotenv");
 const participantRouter = require("./Routes/ParticipantRoutes");
@@ -14,6 +15,7 @@ dotenv.config();
 app.use(express.json());
 app.use(express.urlencoded());
 app.use(morgan('common'))
+app.use(cors());
 
 mongoose.connect(process.env.Mongo_DB, {
     useNewUrlParser: true,
@@ -33,11 +35,11 @@ app.listen(process.env.PORT, () => {
 })
 
 // All Routes
-app.use("/api/v1", participantRouter)
-app.use("/api/v1", sampleRouter)
-app.use("/api/v1", subjectRouter)
-app.use("/api/v1", superAdminRoutes)
-app.use("/api/v1", userRoutes)
+app.use("/api/v1/participant", participantRouter)
+app.use("/api/v1/sample", sampleRouter)
+app.use("/api/v1/subject", subjectRouter)
+app.use("/api/v1/admin", superAdminRoutes)
+app.use("/api/v1/user", userRoutes)
 
 
 

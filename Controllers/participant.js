@@ -1,29 +1,43 @@
 
 const participantModel = require("../Models/participantModel")
-
+const sampleModel = require("../Models/sampleModel")
 exports.createParticipant = async (req, res, next) => {
     try {
         const { name, lastName, phoneNumber, email, experience, resume } = req.body;
-        if (!name || !lastName || !phoneNumber || !email || !experience) {
+        if (!name || !lastName || !phoneNumber || !email || !experience || !resume) {
             throw "Data Not Sended Completely"
         }
-        await participantModel.create({
+
+      var userData =   await participantModel.create({
             name,
             lastName,
             phoneNumber,
             email,
-            experience
+            experience,
+            resume
         })
 
+        var UploadfileData;
+        console.log(userData,"userData");
+        if(userData){
+            UploadfileData = await sampleModel.create({
+                userName : userData._id,
+            })
+
+        }
+        userData = await participantModel.findByIdAndUpdate({_id : userData._id}, {
+            $set : {samples : UploadfileData._id}
+        }, {new : true})
+      
         res.status(201).json({
             success: true,
-            status: 201,
-            message: "Participant Created Successfully"
+            message: "Participant Created Successfully",
+            user : userData
         })
     }
     catch (err) {
         res.status(400).json({
-            status: false,
+            success: false,
             message: err.message
         })
     }
@@ -32,7 +46,7 @@ exports.createParticipant = async (req, res, next) => {
 
 exports.deleteParticipant = async (req, res, next) => {
     try {
-        const { id } = req.body;
+        const { id } = req.query;
 
         if (id.length === 0) {
             return res.status(409).json({
@@ -46,20 +60,20 @@ exports.deleteParticipant = async (req, res, next) => {
             // throw 
             return res.status(409).json({
                 message: "No Participend Found",
-                status: false
+                success: false,
             })
         }
 
-        res.status(400).json({
+        res.status(200).json({
             message: "Participent Deleted Successfully",
-            status: false,
+            success: true,
         })
     }
     catch (err) {
 
         res.status(409).json({
             message: err.message,
-            status: false
+            success: false,
         })
     }
 }
@@ -67,25 +81,29 @@ exports.deleteParticipant = async (req, res, next) => {
 exports.getAllParticipant = async (req, res, next) => {
     try {
 
-        const page = 1
-        const limit = 10
+        // const page = 1
+        // const limit = 10
 
-        let skip = (page - 1) * limit;
+        // let skip = (page - 1) * limit;
 
-        const AllParticipantModel = await participantModel.find().skip(skip).limit(limit).sort({ "createdAt": -1 }).populate('subject');
-        if (!AllParticipantModel) {
-            throw "No Data Available"
+        // const AllParticipantModel = await participantModel.find({}).skip(skip).limit(limit).sort({ "createdAt": -1 }).populate('subject');
+        const AllParticipantModel = await participantModel.find({}).sort({ "createdAt": -1 }).populate('samples');
+        if (AllParticipantModel.length === 0) {
+            res.status(200).json({
+                message: "No Participent Data Available",
+                success: true,
+            })
         }
         res.status(200).json({
             data: AllParticipantModel,
             message: "All Participent Data Available",
-            status: 200
+            success: true,
         })
     }
     catch (err) {
         res.status(400).json({
             error: err,
-            status: 400
+            success: false,
         })
     }
 
@@ -98,29 +116,28 @@ exports.getSingleParticipant = async (req, res, next) => {
         if (id.length === 0 && !id) {
             res.status(409).json({
                 message: "Please Send ID first",
-                status: false
+                success: false,
             })
         }
         const user = await participantModel.findById({ _id: id })
 
         if (user.length === 0) {
-            // throw 
             return res.status(409).json({
                 message: "No Participend Found",
-                status: false
+                success: false,
             })
         }
 
-        res.status(400).json({
+        res.status(200).json({
             Data: user,
-            status: false,
+            success: true,
         })
     }
     catch (err) {
 
         res.status(409).json({
             message: err.message,
-            status: false
+            success: false,
         })
     }
 }
@@ -132,7 +149,7 @@ exports.FilterParticipentBySubject = async (req, res, next) => {
         if (subject.length === 0) {
             return res.status(404).json({
                 message: "Does't Support Blank Array",
-                status: false
+                success: false,
             })
         }
         const page = 1
@@ -168,7 +185,7 @@ exports.FilterParticipentBySubject = async (req, res, next) => {
 
         res.status(404).json({
             message: err.message,
-            status: false
+            success: false,
         })
     }
 }
@@ -180,7 +197,7 @@ exports.FilterParticipantByYears = async (req, res, next) => {
         if (!year) {
             return res.status(301).json({
                 message: "No data Send By front end",
-                status: false
+                success: false,
             })
         }
 
@@ -194,7 +211,7 @@ exports.FilterParticipantByYears = async (req, res, next) => {
     catch (err) {
         res.status(400).json({
             message: err.message,
-            status: false,
+            success: false,
         })
     }
 }
@@ -247,33 +264,31 @@ exports.SearchByName = async (req, res, next) => {
 exports.approveParticipantSubject = async (req, res, next) => {
     try {
         const { subjectId, participantId, reviewBy, status, message } = req.body
-
         const AlreadyApproved = await participantModel.findOne({_id:participantId},{"review.subject":subjectId});
         if(AlreadyApproved){
             return res.status(400).json({
                 message:"User Already Approved By Qc",
-                status:false
+                success: false,
             })
         }
-
         const data = await participantModel.findOneAndUpdate({ _id: participantId },
             { $push: { review: { subject: subjectId, reviewBy: reviewBy, isApproved: status, message: message } } });
 
         if (!data) {
             return res.status(400).json({
                 message: `subject Approved ${status} SuccessFully`,
-                status: `${status}`,
+                success: `${status}`,
             })
         }
         res.status(201).json({
             message: `subject Approved ${status} SuccessFully`,
-            status: `${status}`,
+            success: `${status}`,
         })
     }
     catch (err) {
         res.status(401).json({
             message: err.message,
-            status: false
+            success: false,
         })
 
     }
@@ -281,12 +296,13 @@ exports.approveParticipantSubject = async (req, res, next) => {
 
 exports.addSubjectInPatricipant = async (req, res, next) => {
 
+ try{
     const { subjectId, userId } = req.body;
 
     if (!subjectId && !userId) {
         return res.status(400).json({
             message: "please Send subjectid and userid first",
-            status: false
+            success: false,
         })
     }
 
@@ -312,6 +328,13 @@ exports.addSubjectInPatricipant = async (req, res, next) => {
         message: "SUBJECT ADDED",
         data: addSubject
     })
+ }
+ catch(err){
+    res.status(400).json({
+        message:err.message,
+        success:false
+    })
+ }
 }
 
 
@@ -323,7 +346,7 @@ exports.removeSubjectInParticipant = async(req,res,next) =>{
     if (!subjectId && !userId) {
         return res.status(400).json({
             message: "please Send subjectid and userid first",
-            status: false
+            success:false
         })
     }
     const RemoveSubject = await participantModel.findOneAndUpdate({ _id: userId }, { $pull: { subject: subjectId } }, { new: true });

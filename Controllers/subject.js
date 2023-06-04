@@ -34,13 +34,16 @@ exports.getAllSubject = async (req, res, next) => {
         const allDataofSubject = await subjectModel.find();
         console.log(allDataofSubject, 'allDataofSubject');
         if (allDataofSubject.length === 0) {
-            throw "No Data Available"
+            res.status(200).json({
+                message: "No Data Available",
+                success:false
+            })
         }
         else {
             res.status(200).json({
                 data: allDataofSubject,
                 message: "Subject Data Available",
-                status: 200
+                success:true
             })
         }
 
@@ -48,7 +51,7 @@ exports.getAllSubject = async (req, res, next) => {
     catch (err) {
         res.status(400).json({
             error: err,
-            status: 400
+            success:true
         })
     }
 
@@ -62,20 +65,20 @@ exports.editSubject = async (req, res, next) => {
         if (subjectName.length === 0 && !subjectName) {
             res.status(500).json({
                 message: "please Send The Data First",
-                status: false
+                success:false
             })
         }
         await subjectModel.findOneAndUpdate({ _id: subjectId }, { subjectName })
 
         res.status(201).json({
             message: "Subject Name Updated SuccessFully",
-            status: true
+            success:true
         })
     }
     catch (err) {
         res.status(500).json({
             message: err.message,
-            status: false
+            success:false
         })
     }
 }
@@ -84,25 +87,31 @@ exports.editSubject = async (req, res, next) => {
 exports.deleteSubject = async (req, res, next) => {
 
     try {
-        const { subjectId } = req.body;
+        const { subjectId } = req.query;
         if (!subjectId) {
-            throw "please Send User Info Properly"
+      return res.status(409).json({
+        message:"please send required field",
+        success:false
+      })
         }
         const deletedSubject = await subjectModel.findByIdAndRemove({ _id: subjectId })
 
         if (!deletedSubject) {
-            throw "No Subject Found In DataBase For this Name"
+            return res.status(409).json({
+                message:"No Subject Found In DataBase For this Name",
+                success:false
+              })
         }
 
         res.status(201).json({
             message: "Subject Deleted SuccessFully",
-            status: true
+            success:true
         })
     }
     catch (err) {
         res.status(400).json({
             message: err.message,
-            status: false
+            success:false
         })
     }
 }

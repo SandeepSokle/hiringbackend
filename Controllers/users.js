@@ -11,7 +11,7 @@ exports.CreateUser = async (req, res, next) => {
         {
             return res.status(400).json({
                 message:"Please Send All Field",
-                status:false
+                success:false
             })
         }
 
@@ -38,13 +38,13 @@ exports.CreateUser = async (req, res, next) => {
     catch (err) {
         if (err.code === 11000) {
             res.status(409).json({
-                status: false,
+                success:false,
                 error: "User already exist!!"
             })
         }
         else {
             res.status(500).json({
-                status: false,
+                success:false,
                 error: err.message
             })
         }
@@ -56,17 +56,20 @@ exports.getAllUsers = async (req, res, next) => {
      
         const isUserFound = await userModel.find().populate('subjectType');
         if (!isUserFound) {
-            throw "No User Data Available"
+          return res.status.josn({
+            message:"No Data Available",
+            success:false
+          })
         }
         res.status(200).json({
             Data: isUserFound,
-            status: true,
+            success:true
         })
     }
     catch (err) {
         res.status(400).json({
             message: err.message,
-            status: false
+            success:false
         })
     }
 }
@@ -76,24 +79,30 @@ exports.deleteUser = async (req, res, next) => {
 
         const { userId } = req.body;
         if (!userId) {
-            throw "please Send User Info Properly"
+          return res.status(400).json({
+            message:"please send required Field",
+            success:false
+          })
         }
         const deleteUser = await userModel.findByIdAndRemove({ _id: userId })
         console.log(deleteUser, "deleteuser");
 
         if (!deleteUser) {
-            throw "No Qc Found In DataBase For this Name"
+            return res.status(400).json({
+                message:"No Qc Found In DataBase For this Name",
+                success:false
+              }) 
         }
 
         res.status(201).json({
             message: "QC Deleted SuccessFully",
-            status: true
+            success:true
         })
     }
     catch (err) {
         res.status(400).json({
             message: err.message,
-            status: false
+            success: false
         })
     }
 }
@@ -139,12 +148,13 @@ exports.sendMessageToPhone = async(req,res,next)=>{
 }
 
 exports.userLogin = async(req,res,next)=>{
+ try{
     const {phoneNumber,password} = req.body
 
     if(!phoneNumber || !password){
         return res.status(400).json({
             message:"Phone Number Or Password required",
-            status:false
+            success:false
         })
     }
 
@@ -155,7 +165,7 @@ exports.userLogin = async(req,res,next)=>{
     if(!user){
         return res.status(400).json({
             message:"Phone Number or Password Wrong",
-            status:false
+            success:false
         })
     }
 
@@ -164,7 +174,7 @@ exports.userLogin = async(req,res,next)=>{
     if(!isPasswordMatch){
        return res.status(400).json({
             message:"Password Must Match",
-            status:false
+            success:false
         })
     }
 
@@ -172,9 +182,16 @@ exports.userLogin = async(req,res,next)=>{
 res.status(200).json({
     message:"Login Successfull",
     data:user,
-    status:true
+    success:true
 })
 
+ }
+ catch(err){
+    res.status(400).josn({
+        message:err.message,
+        success:false
+    })
+ }
 }
 
 const GenrateOtp = async() =>{

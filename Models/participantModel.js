@@ -14,8 +14,8 @@ const schema = new mongoose.Schema({
         maxLength: [80, "Title can't exceed 80 Character"],
     },
     samples: {
-        type: [mongoose.Schema.Types.ObjectId],
-        required: true,
+        type: mongoose.Schema.Types.ObjectId,
+        // required: true,
         ref: 'sample',
     },
     subject: {
@@ -39,7 +39,7 @@ const schema = new mongoose.Schema({
     },
     resume: {
         type: String,
-        required:true,
+        // required:true,
     },
     review: [
         {
