@@ -136,6 +136,35 @@ exports.sendMail = async(req,res,next) =>{
       })
 }
 
+
+exports.editUsers = async(req,res,next)=>{
+    try{
+
+        const {userId,name}= req.body;
+
+        // ,lastName,password,email} 
+        // ,lastName:lastName,password:password,email:email
+    const user = await userModel.findOneAndUpdate({_id:userId},{ name:name} ,{new:true})
+if(!user){
+return res.status(400).json({
+    message:"user Not Available for this id",
+    success:false
+})
+}
+
+res.status(200).json({
+    message:"user Updated Successfully",
+    success:true
+})
+    }
+    catch(error){
+        res.status(400).json({
+            message:error.message,
+            success:false
+        })
+    }
+}
+
 exports.sendMessageToPhone = async(req,res,next)=>{
 
     // twilio.messages.create({
@@ -193,6 +222,7 @@ res.status(200).json({
     })
  }
 }
+
 
 const GenrateOtp = async() =>{
     let digit = '0123456789'

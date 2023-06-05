@@ -176,9 +176,55 @@ exports.FilterParticipentBySubject = async (req, res, next) => {
             { $limit: limit }
         ])
 
+        // let filterParticipantbysubject = await participantModel.aggregate([
+        //     {
+        //         $lookup:{
+        //             from: "samples",
+        //             localField: "samples",
+        //             foreignField: "_id",
+        //             pipeline : [
+        //                 {
+        //                     $project : {
+        //                         subject : "$subjectData.subject"
+        //                     }
+        //                 },
+        //             {
+        //                 $lookup : {
+        //                     from : "subjects",
+        //                     localField : "subject",
+        //                     foreignField : "_id",
+        //                     as : "subject"
+        //                 }
+        //             }
+        //             ],
+        //             as: "samples"
+        //         },
+                
+        //     },
+        //     {
+        //         $addFields : {
+        //             samples :  {
+        //                 $arrayElemAt : ["$samples", 0]
+        //             }
+        //         }
+        //     },
+        //     // {
+        //     //     $group : {
+        //     //         _id : "$samples.subject.subjectName",
+        //     //         participant : { $push : "$$CURRENT"}
+        //     //     }
+        //     // },
+        //      {
+        //         $match: {
+        //             "samples.subject.subjectName": { $in: subject }
+        //         }
+        //     },
+        // ])
+
         res.status(200).json({
             success: true,
-            data: FilterParticipant
+            // data: filterParticipantbysubject
+            data:FilterParticipant
         })
     }
     catch (err) {
@@ -262,15 +308,49 @@ exports.SearchByName = async (req, res, next) => {
 }
 
 exports.approveParticipantSubject = async (req, res, next) => {
+
+//    try{
+//     const { subjectId, participantId, reviewBy, status, message } = req.body;
+
+//     if(!subjectId || !participantId || !reviewBy || !status ){
+//         return res.status(400).json({
+//             message:"Please Send All Required Field",
+//             status:false
+//         })
+//     }
+
+//     const ApproveData = await participantModel.findByIdAndUpdate({_id:participantId},{ $push: { review: { subject: subjectId, reviewBy: reviewBy, isApproved: status, message: message } } });
+
+
+//    }
+
+//    catch(error){
+//     res.status(400).json({
+//         message:error.message,
+//         success:false
+//     })
+//    }
+
+
     try {
         const { subjectId, participantId, reviewBy, status, message } = req.body
-        const AlreadyApproved = await participantModel.findOne({_id:participantId},{"review.subject":subjectId});
-        if(AlreadyApproved){
+        const IsUserFound = await participantModel.findOne({_id:participantId},{"review.reviewBy":reviewBy});
+        console.log(IsUserFound,"AlreadyApproved");
+        if(IsUserFound){
             return res.status(400).json({
-                message:"User Already Approved By Qc",
+                message:"No User Found With This participant Id",
                 success: false,
             })
         }
+
+        const AlreadyApproved = await participantModel.findById({_id:participantId},{"review.reviewBy":reviewBy})
+        if(AlreadyApproved){
+           return  res.status(409).json({
+            message:"Subject Already Reviewed By The QC",
+            success:false,
+            })
+        }
+
         const data = await participantModel.findOneAndUpdate({ _id: participantId },
             { $push: { review: { subject: subjectId, reviewBy: reviewBy, isApproved: status, message: message } } });
 
@@ -291,6 +371,33 @@ exports.approveParticipantSubject = async (req, res, next) => {
             success: false,
         })
 
+    }
+}
+
+exports.getAllApprovedsubjectofuser = async(req,res,next) =>{
+    try{
+
+        const {participantId} = req.body;
+
+        const ReviewData = await participantModel.find({_id:participantId},{review:1})
+
+        if(!ReviewData){
+           return res.status(400).json({
+                message:"No Data Available",
+                success:false
+            })
+        }
+
+       res.status(200).json({
+        data:ReviewData,
+        success:true
+       })
+    }
+    catch(error){
+        res.status(400).json({
+            message:error.message,
+            status:false
+        })
     }
 }
 

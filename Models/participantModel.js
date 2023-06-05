@@ -45,6 +45,7 @@ const schema = new mongoose.Schema({
         {
             subject: mongoose.Schema.Types.ObjectId,
             isApproved: Boolean,
+            // isApproved,
             reviewBy: mongoose.Schema.Types.ObjectId,
             message: String
         }
