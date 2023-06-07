@@ -9,7 +9,6 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 router.route("/").post(upload.single("file"), (req, res) => {
-  console.log(req);
   const containerName = "hiringappdata";
   const fileName = new Date().valueOf() + "_" + req.file.originalname;
   const fileData = req.file.buffer;
@@ -29,17 +28,27 @@ router.route("/").post(upload.single("file"), (req, res) => {
           fileName,
           stream,
           fileData.length,
-          (err, result, response) => {
+          async (err, result, response) => {
             if (err) {
               console.error("Error uploading File:", err);
               res.status(500).send("Error uploading File");
             } else {
+              console.log({
+                result,
+                response,
+              });
               const fileUrl = `https://hiringapp.blob.core.windows.net/${result.container}/${result.name}`;
-              console.log("File URL:", fileUrl);
+              // console.log("File URL:", fileUrl);
               console.log("File uploaded successfully.");
               res
                 .status(200)
-                .send({ msg: "File uploaded successfully", fileUrl });
+                .send({
+                  msg: "File uploaded successfully",
+                  fileUrl,
+                  name: req.file.originalname,
+                  size: req.file.size,
+                  date: response.headers.date,
+                });
             }
           }
         );
